@@ -32,6 +32,7 @@ class SplashScreen extends StatelessWidget {
       child: BlocConsumer<SplashScreenCubit, SplashScreenStates>(
         builder: (BuildContext context, state) {
           return Scaffold(
+            backgroundColor: Colors.white,
             appBar: AppBar(
               backgroundColor: Colors.white,
               elevation: 0.0,
