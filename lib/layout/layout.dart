@@ -2,15 +2,15 @@ import 'package:booking_app/layout/cubit/cubit.dart';
 import 'package:booking_app/layout/cubit/states.dart';
 import 'package:booking_app/modules/categories/categories_screen.dart';
 import 'package:booking_app/modules/favorites/favorites_screen.dart';
-import 'package:booking_app/modules/search/search_screen.dart';
+import 'package:booking_app/modules/home/home_screen.dart';
 import 'package:booking_app/modules/settings/settings_screen.dart';
 import 'package:booking_app/shared/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class HomeScreen extends StatelessWidget {
+class LayoutScreen extends StatelessWidget {
   List screens = [
-    SearchScreen(),
+    HomeScreen(),
     CategoriesScreen(),
     FavoritesScreen(),
     SettingsScreen(),
@@ -27,11 +27,11 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     SizeConfig().init(context);
     return BlocProvider(
-      create: (BuildContext context) => HomeScreenCubit(),
-      child: BlocConsumer<HomeScreenCubit, HomeScreenStates>(
+      create: (BuildContext context) => LayoutScreenCubit(),
+      child: BlocConsumer<LayoutScreenCubit, LayoutScreenStates>(
         listener: (BuildContext context, state) {},
         builder: (BuildContext context, state) {
-          currentIndex = HomeScreenCubit.get(context).currentIndex;
+          currentIndex = LayoutScreenCubit.get(context).currentIndex;
           return Scaffold(
 
             backgroundColor: Color(0xFFF8F8FF),
@@ -75,9 +75,9 @@ class HomeScreen extends StatelessWidget {
                   items: [
                     BottomNavigationBarItem(
                       icon: Icon(
-                        Icons.search,
+                        Icons.home_outlined,
                       ),
-                      label: 'Search',
+                      label: 'Home',
                     ),
                     BottomNavigationBarItem(
                         icon: Icon(Icons.category_outlined),
@@ -93,7 +93,7 @@ class HomeScreen extends StatelessWidget {
                   selectedItemColor: Colors.blue,
                   currentIndex: currentIndex,
                   onTap: (value) {
-                    HomeScreenCubit.get(context).changeIndex(value);
+                    LayoutScreenCubit.get(context).changeIndex(value);
                   },
                   backgroundColor: Colors.white,
                   selectedFontSize: getProportionateScreenWidth(8.0),

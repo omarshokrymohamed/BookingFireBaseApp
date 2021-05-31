@@ -1,14 +1,26 @@
-import 'package:booking_app/modules/entertainment/entertainment_screen.dart';
+import 'package:booking_app/modules/fields/fields_screen.dart';
 import 'package:booking_app/shared/commponents/commponents.dart';
 import 'package:booking_app/shared/size_config.dart';
 import 'package:flutter/material.dart';
 
-class CategoriesScreen extends StatelessWidget {
+class EntertainmentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
     return Scaffold(
-      body: Column(
+      backgroundColor: Color(0xFFF8F8FF),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.0,
+        iconTheme: IconThemeData(color: Colors.black),
+        title: Text(
+          'Entertainment',
+          style: TextStyle(
+            color: Colors.black,
+          ),
+        ),
+      ),
+      body:  Column(
         children: [
           SizedBox(
             height: SizeConfig.screenHeight * 0.04,
@@ -18,7 +30,10 @@ class CategoriesScreen extends StatelessWidget {
 
             child: InkWell(
               onTap: (){
-
+              navigateTo(
+                context: context ,
+                route: FieldsScreen(),
+              );
 
               },
               child: Container(
@@ -36,11 +51,12 @@ class CategoriesScreen extends StatelessWidget {
 
 
 
-                      child: Image(image: AssetImage("assets/images/books.png"),
+                      child: Image(image: AssetImage("assets/images/field.png"),
 
                         height: 170.0,
                         width: 500.0,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.fill,
+
 
                       ),
 
@@ -66,13 +82,10 @@ class CategoriesScreen extends StatelessWidget {
                           padding: const EdgeInsets.all(10.0),
                           child: Column(
                             children: [
-                              Text("Educational",style: TextStyle(color: Colors.white,fontSize: 20.0,fontWeight: FontWeight.bold),
+                              Text("Fields",style: TextStyle(color: Colors.white,fontSize: 20.0,fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 4.0),
-                              Text("Now you can reserve many educational places",style:
-                              TextStyle(color: Colors.white,fontWeight:FontWeight.w400 ),
-                              ),
-                              Text("like working spaces and training center",style:
+                              Text("Now you can reserve many football fields",style:
                               TextStyle(color: Colors.white,fontWeight:FontWeight.w400 ),
                               ),
                             ],
@@ -111,11 +124,11 @@ class CategoriesScreen extends StatelessWidget {
 
 
 
-                      child: Image(image: AssetImage("assets/images/entertainmnet.jpg"),
+                      child: Image(image: AssetImage("assets/images/cinema.jpg"),
 
                         height: 170.0,
                         width: 500.0,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.fill,
 
                       ),
 
@@ -141,13 +154,13 @@ class CategoriesScreen extends StatelessWidget {
                           padding: const EdgeInsets.all(10.0),
                           child: Column(
                             children: [
-                              Text("Entertainment",style: TextStyle(color: Colors.white,fontSize: 20.0,fontWeight: FontWeight.bold),
+                              Text("Cinema",style: TextStyle(color: Colors.white,fontSize: 20.0,fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 4.0),
-                              Text("Here you can reserve many entertainment places",style:
+                              Text("Here you can reserve many cinemas ",style:
                               TextStyle(color: Colors.white,fontWeight:FontWeight.w400 ),
                               ),
-                              Text("like cinemas and football stadium  ",style:
+                              Text("and enjoy watching movies",style:
                               TextStyle(color: Colors.white,fontWeight:FontWeight.w400 ),
                               ),
                             ],

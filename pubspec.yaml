@@ -35,6 +35,12 @@ dependencies:
   flutter_rating_bar: ^3.2.0+1
   image_picker: ^0.6.7+17
   flutter_statusbarcolor: ^0.2.3
+  firebase_core: "0.7.0"
+  firebase_auth: "^0.20.1"
+  cloud_firestore: "^0.16.0+1"
+  firebase_storage: "^7.0.0"
+  syncfusion_flutter_datepicker: ^18.4.46-beta
+
 
 dev_dependencies:
   flutter_test:
@@ -57,6 +63,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/images/
+    - assets/icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

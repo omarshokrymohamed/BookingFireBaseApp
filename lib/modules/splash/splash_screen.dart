@@ -1,4 +1,4 @@
-import 'package:booking_app/layout/home.dart';
+import 'package:booking_app/modules/login/login_screen.dart';
 import 'package:booking_app/shared/commponents/commponents.dart';
 import 'package:booking_app/shared/size_config.dart';
 import 'package:flutter/cupertino.dart';
@@ -79,7 +79,7 @@ class SplashScreen extends StatelessWidget {
                             onPressed: () {
                               navigateAndFinish(
                                 context: context,
-                                route: HomeScreen(),
+                                route: LoginScreen(),
                               );
                             },
                             child: Text(

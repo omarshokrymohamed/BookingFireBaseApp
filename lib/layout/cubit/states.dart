@@ -1,3 +1,3 @@
-abstract class HomeScreenStates{}
-class HomeScreenInitialState extends HomeScreenStates{}
-class HomeScreenChangeIndexState extends HomeScreenStates{}
+abstract class LayoutScreenStates{}
+class LayoutScreenInitialState extends LayoutScreenStates{}
+class LayoutScreenChangeIndexState extends LayoutScreenStates{}
