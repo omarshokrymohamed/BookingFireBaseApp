@@ -5,23 +5,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:weekday_selector/weekday_selector.dart';
 
-import '../BottomNavigatorBar/BottomNavigatorBar.dart' as bottom;
+class WorkSpaceDetails extends StatefulWidget {
+  final Map<String, String> item;
+  final List<List<Map<String, int>>> slots;
+  final List<int> numberOfDeletedSlotsPerDay;
 
-class FieldDetails extends StatefulWidget {
-  Map<String, String> item;
-  List<List<Map<String, int>>> slots;
-  String comefrom;
-  FieldDetails({
+  WorkSpaceDetails({
     @required this.item,
     @required this.slots,
-    @required this.comefrom,
+    @required this.numberOfDeletedSlotsPerDay,
   });
 
   @override
-  _FieldDetailsState createState() => _FieldDetailsState();
+  _WorkSpaceDetailsState createState() => _WorkSpaceDetailsState();
 }
 
-class _FieldDetailsState extends State<FieldDetails> {
+class _WorkSpaceDetailsState extends State<WorkSpaceDetails> {
   @override
   void initState() {
     switch (getDate()) {
@@ -112,33 +111,15 @@ class _FieldDetailsState extends State<FieldDetails> {
     );
   }
 
-  void _showToast2(BuildContext context, String message) {
-    showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              title: Text(
-                message,
-                textAlign: TextAlign.center,
-              ),
-              content: RaisedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text("OK"),
-              ),
-            )).then((value) => () {});
-  }
-
   int getDate() {
     var now = new DateTime.now();
     return now.weekday;
   }
 
-  store.CollectionReference fields =
-      store.FirebaseFirestore.instance.collection('fields');
+  store.CollectionReference WorkSpaces =
+      store.FirebaseFirestore.instance.collection('workspaces');
 
   String name;
-
   _fetchUserName() async {
     final auth = FirebaseAuth.instance;
     await FirebaseFirestore.instance
@@ -157,8 +138,8 @@ class _FieldDetailsState extends State<FieldDetails> {
   Future<void> reserve(
       String doucmentID, String slotname, int modifiedSlotNumber) async {
     await _fetchUserName();
-    return fields
-        .doc(doucmentID)
+
+    return WorkSpaces.doc(doucmentID)
         .update(
           {
             'isreservedslot' + (selectedSlot + 1).toString(): true,
@@ -215,13 +196,29 @@ class _FieldDetailsState extends State<FieldDetails> {
       print('Recent monday $now');
     }
 
-    return fields
-        .doc(doucmentID)
+    return WorkSpaces.doc(doucmentID)
         .update({
           'isreservedslot' + (selectedSlot + 1).toString() + 'timestamp': now
         })
         .then((value) => print("reserved successfully" + now.toString()))
         .catchError((error) => print("Failed to add user: $error"));
+  }
+
+  void _showToast2(BuildContext context, String message) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: Text(
+                message,
+                textAlign: TextAlign.center,
+              ),
+              content: RaisedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("OK"),
+              ),
+            )).then((value) => () {});
   }
 
   @override
@@ -241,7 +238,7 @@ class _FieldDetailsState extends State<FieldDetails> {
                   Container(
                     child: Image(
                       image: widget.item['hasimages'] == 'no'
-                          ? AssetImage("assets/images/field1.jpg")
+                          ? AssetImage("assets/images/workspace.png")
                           : NetworkImage(widget.item['imageurl']),
                       height: 170.0,
                       width: 500.0,
@@ -306,7 +303,7 @@ class _FieldDetailsState extends State<FieldDetails> {
                                 Spacer(),
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor,
+                                    color: Colors.green,
                                     borderRadius: BorderRadius.circular(5.0),
                                   ),
                                   child: Padding(
@@ -327,7 +324,7 @@ class _FieldDetailsState extends State<FieldDetails> {
                             Row(
                               children: [
                                 Text(
-                                  '(${widget.item['fields_number']}) Fields',
+                                  '(${widget.item['roomsnumber']}) Rooms',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w400,
@@ -473,26 +470,16 @@ class _FieldDetailsState extends State<FieldDetails> {
                 end: 8.0,
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Column(
                     children: [
                       Image.asset(
-                        'assets/images/ball.png',
+                        'assets/images/wifi.png',
                         height: 40.0,
                         width: 40.0,
                       ),
-                      Text('Ball Rent'),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Image.asset(
-                        'assets/images/drop.png',
-                        height: 40.0,
-                        width: 40.0,
-                      ),
-                      Text('Water'),
+                      Text('Wi-Fi'),
                     ],
                   ),
                   Column(
@@ -503,16 +490,6 @@ class _FieldDetailsState extends State<FieldDetails> {
                         width: 40.0,
                       ),
                       Text('Toilet'),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Image.asset(
-                        'assets/images/shower.png',
-                        height: 40.0,
-                        width: 40.0,
-                      ),
-                      Text('Shower'),
                     ],
                   ),
                   Column(
@@ -552,15 +529,7 @@ class _FieldDetailsState extends State<FieldDetails> {
                       await reserveTimeStamp(
                           widget.item['name'].toLowerCase() + selectedDayy,
                           modifiedSLotNumber);
-                      if (widget.comefrom == "notafvorite") {
-                        Navigator.pop(context);
-                      } else {
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => bottom.BottomNavigator(),
-                            ));
-                      }
+                      Navigator.pop(context);
                     }
                     _showToast2(
                         context,
@@ -627,7 +596,7 @@ class _FieldDetailsState extends State<FieldDetails> {
                             height: 4.0,
                           ),
                           Image.asset(
-                            'assets/images/ball.png',
+                            'assets/images/workspace2.jpg',
                             height: 50.0,
                             width: 50.0,
                           )
@@ -673,9 +642,9 @@ class _FieldDetailsState extends State<FieldDetails> {
                         height: 4.0,
                       ),
                       Image.asset(
-                        'assets/images/ball.png',
+                        'assets/images/workspace2.jpg',
                         height: 50.0,
-                        width: 50.0,
+                        width: 55.0,
                       )
                     ],
                   ),

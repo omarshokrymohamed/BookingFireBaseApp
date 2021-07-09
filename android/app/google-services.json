@@ -1,41 +1,33 @@
 {
   "project_info": {
-    "project_number": "1071186785843",
-    "project_id": "booking-app-49d2f",
-    "storage_bucket": "booking-app-49d2f.appspot.com"
+    "project_number": "179170603323",
+    "project_id": "bookingapp-36db2",
+    "storage_bucket": "bookingapp-36db2.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1071186785843:android:de0610ec50d61cecef5546",
+        "mobilesdk_app_id": "1:179170603323:android:2c55380f0a321aec82c71e",
         "android_client_info": {
           "package_name": "com.geek.booking_app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1071186785843-sm4p4mbda7co3ns4tcshsql5hapukcp2.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.geek.booking_app",
-            "certificate_hash": "cd5f1fa2fb07b653095aafab44c32bc046338ddf"
-          }
-        },
-        {
-          "client_id": "1071186785843-u4mg0e3stmh5v980642f2lkeij3ni9um.apps.googleusercontent.com",
+          "client_id": "179170603323-c54ojt22nd0iiv04k21d42epcer64jso.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDvjZqd4HfsrYuQtLZ_W60bWsuZH4E49ZQ"
+          "current_key": "AIzaSyDKSwoxkuukG-QVZrHjLXcPQk7Wfxb8kfA"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "1071186785843-u4mg0e3stmh5v980642f2lkeij3ni9um.apps.googleusercontent.com",
+              "client_id": "179170603323-c54ojt22nd0iiv04k21d42epcer64jso.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

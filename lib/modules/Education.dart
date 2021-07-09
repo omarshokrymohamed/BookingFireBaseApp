@@ -1,50 +1,52 @@
 import 'package:booking_app/modules/Constants.dart';
-import 'package:booking_app/modules/fields/fields_screen.dart';
 import 'package:booking_app/shared/commponents/commponents.dart';
 import 'package:booking_app/shared/size_config.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class EntertainmentScreen extends StatefulWidget {
+import 'WorkSpace_Screen.dart';
+
+class EducationtScreen extends StatefulWidget {
   @override
-  _EntertainmentScreenState createState() => _EntertainmentScreenState();
+  _EducationtScreenState createState() => _EducationtScreenState();
 }
 
-class _EntertainmentScreenState extends State<EntertainmentScreen> {
+class _EducationtScreenState extends State<EducationtScreen> {
   List<bool> Approved = [];
-  List<String> fieldsnames = [];
+  List<String> workspacesnames = [];
   List<Map<String, String>> fields = [];
   final auth = FirebaseAuth.instance;
   _fetchAll() async {
     fields = [];
-    fieldsnames = [];
+    workspacesnames = [];
     Approved = [];
     int numberOfFields;
     await FirebaseFirestore.instance
-        .collection('fields')
-        .doc('fieldsname')
+        .collection('workspaces')
+        .doc('workspacesname')
         .get()
         .then(
       (ds) {
-        numberOfFields = ds.data()['numberoffields'];
+        numberOfFields = ds.data()['numberofworkspaces'];
         for (int i = 0; i < numberOfFields; i++) {
           setState(() {
-            fieldsnames.add(ds.data()['field' + (i + 1).toString()]);
-            Approved.add(ds.data()['fieldapproved' + (i + 1).toString()]);
+            workspacesnames.add(ds.data()['workspace' + (i + 1).toString()]);
+            Approved.add(ds.data()['workspaceapproved' + (i + 1).toString()]);
           });
-          print(i);
         }
       },
     ).catchError((e) {
       print(e);
     });
-    for (int i = 0; i < fieldsnames.length; i++) {
-      if (Approved[i] == true) await _fetch('fields', fieldsnames.elementAt(i));
+    for (int i = 0; i < workspacesnames.length; i++) {
+      if (Approved[i] == true)
+        await _fetch('workspaces', workspacesnames.elementAt(i));
     }
   }
 
   _fetch(String documentID, String fieldName) async {
+    print(fieldName);
     String name, area, cost, numberoffields, imageUrl, phone;
     String hasCustomImage;
     int numberofFavs;
@@ -57,7 +59,7 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
         hasCustomImage = ds.data()['hasimage'];
         name = ds.data()['name'];
         cost = ds.data()['cost'];
-        numberoffields = ds.data()['fieldsnumber'];
+        numberoffields = ds.data()['roomsnumber'];
         area = ds.data()['area'];
         imageUrl = ds.data()['imageurl'];
         phone = ds.data()['phone'];
@@ -69,7 +71,7 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
         .collection('users')
         .doc(auth.currentUser.uid)
         .collection('favorites')
-        .doc('fields')
+        .doc('workspaces')
         .get()
         .then(
       (dss) {
@@ -77,12 +79,12 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
         int i = 0;
 
         for (i; i < numberofFavs; i++) {
-          if (dss.data()['field' + (i + 1).toString()] == name) {
+          if (dss.data()['workspace' + (i + 1).toString()] == name) {
             setState(() {
               fields.add({
                 "name": name,
                 "area": area,
-                "fields_number": numberoffields,
+                "roomsnumber": numberoffields,
                 "cost": cost,
                 "hasimages": hasCustomImage,
                 "imageurl": imageUrl,
@@ -98,12 +100,12 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
             fields.add({
               "name": name,
               "area": area,
-              "fields_number": numberoffields,
+              "roomsnumber": numberoffields,
               "cost": cost,
               "hasimages": hasCustomImage,
               "imageurl": imageUrl,
               "favorite": "no",
-              "phone": phone
+              "phone": phone,
             });
           });
         }
@@ -118,9 +120,7 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
     SizeConfig().init(context);
     return Scaffold(
       appBar: PreferredSize(
-        child: MyAppBar2(
-          title: "Entertainment",
-        ),
+        child: MyAppBar2(title: "Education"),
         preferredSize: const Size.fromHeight(60),
       ),
       body: Column(
@@ -135,8 +135,8 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
                 await _fetchAll();
                 navigateTo(
                   context: context,
-                  route: FieldsScreen(
-                    fields: fields,
+                  route: WorkSpacesScreen(
+                    WorkSpaces: fields,
                   ),
                 );
               },
@@ -151,7 +151,7 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
                   children: [
                     Container(
                       child: Image(
-                        image: AssetImage("assets/images/field.png"),
+                        image: AssetImage("assets/images/workspace.png"),
                         height: 170.0,
                         width: 500.0,
                         fit: BoxFit.fill,
@@ -174,7 +174,7 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
                           child: Column(
                             children: [
                               Text(
-                                "Fields",
+                                "WorkSpaces",
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 20.0,
@@ -182,7 +182,7 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
                               ),
                               SizedBox(height: 4.0),
                               Text(
-                                "Now you can reserve many football fields",
+                                "Now you can reserve many workspaces",
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w400),

@@ -1,564 +1,491 @@
 import 'dart:io';
 
-import 'package:booking_app/modules/login/login_screen.dart';
-import 'package:booking_app/modules/signup/cubit/cubit.dart';
-import 'package:booking_app/modules/signup/cubit/states.dart';
-import 'package:booking_app/shared/commponents/commponents.dart';
 import 'package:booking_app/shared/size_config.dart';
-import 'package:conditional_builder/conditional_builder.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' as store;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/painting.dart';
+import 'package:flutter/rendering.dart';
+import 'package:image_picker/image_picker.dart';
 
-class SignUpScreen extends StatelessWidget {
+import '../login/login_screen.dart';
+
+class SignUpScreen extends StatefulWidget {
+  @override
+  _SignUpScreenState createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
   var emailController = TextEditingController();
+
   var passwordController = TextEditingController();
+
   var fNameController = TextEditingController();
+
   var phoneController = TextEditingController();
+
   var formKey = GlobalKey<FormState>();
+
+  bool isCamera;
+  final auth = FirebaseAuth.instance;
+  String imageUrl;
+  store.CollectionReference users =
+      store.FirebaseFirestore.instance.collection('users');
+  var documentID;
+
+  Future<void> addUserFieldsFavorites() {
+    return users
+        .doc(auth.currentUser.uid)
+        .collection('favorites')
+        .doc('fields')
+        .set({
+          'numberoffavorites': 0,
+        })
+        .then((value) => print("User Added"))
+        .catchError((error) => print("Failed to add user: $error"));
+  }
+
+  Future<void> addUserWorkSpacesFavorites() {
+    return users
+        .doc(auth.currentUser.uid)
+        .collection('favorites')
+        .doc('workspaces')
+        .set({
+          'numberoffavorites': 0,
+        })
+        .then((value) => print("User Added"))
+        .catchError((error) => print("Failed to add user: $error"));
+  }
+
+  Future<void> addUser() {
+    return users
+        .doc(auth.currentUser.uid)
+        .set({
+          'name': fNameController.text,
+          'phone': phoneController.text,
+          'password': passwordController.text,
+          'imageUrl': imageUrl,
+        })
+        .then((value) => print("User Added"))
+        .catchError((error) => print("Failed to add user: $error"));
+  }
+
+  Future uploadFile() async {
+    if (_image != null) {
+      final ref =
+          FirebaseStorage.instance.ref().child('images/${(_image.path)}');
+      await ref.putFile(_image).whenComplete(() async {
+        await ref.getDownloadURL().then(
+          (value) {
+            imageUrl = value;
+          },
+        );
+      });
+    }
+  }
+
+  void onSumbit(BuildContext context) async {
+    final validationValue = formKey.currentState.validate();
+    if (!validationValue) {
+      return;
+    }
+    if (_image == null) {
+      print("here");
+      _showToast(context, "You Have To Choose A Pic");
+      return;
+    }
+    formKey.currentState.save();
+    try {
+      final user = await auth.createUserWithEmailAndPassword(
+          email: emailController.text, password: passwordController.text);
+      await uploadFile();
+      await addUser();
+      await addUserFieldsFavorites();
+      await addUserWorkSpacesFavorites();
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => LoginScreen()));
+    } catch (error) {
+      _showToast(context, error.toString());
+      print(error);
+    }
+  }
+
+  File _image;
+  final picker = ImagePicker();
+  Future<bool> _showAlert(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: Text(
+                "Choosing Image",
+                textAlign: TextAlign.center,
+              ),
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  RaisedButton(
+                    onPressed: () {
+                      setState(() {
+                        isCamera = true;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: Text("camera"),
+                  ),
+                  RaisedButton(
+                    onPressed: () {
+                      setState(() {
+                        isCamera = false;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: Text("gallery"),
+                  ),
+                ],
+              ),
+            )).then((value) => getImage(context));
+  }
+
+  Future getImage(BuildContext context) async {
+    if (isCamera) {
+      final pickedFile = await picker.getImage(source: ImageSource.camera);
+      setState(() {
+        if (pickedFile != null) {
+          _image = File(pickedFile.path);
+          print(_image.path);
+        } else {
+          print('No image selected.');
+        }
+      });
+    } else if (isCamera == false) {
+      final pickedFile = await picker.getImage(source: ImageSource.gallery);
+      setState(() {
+        if (pickedFile != null) {
+          _image = File(pickedFile.path);
+          print(_image.path);
+        } else {
+          print('No image selected.');
+        }
+      });
+    }
+  }
+
+  void _showToast(BuildContext context, String message) {
+    final scaffold = Scaffold.of(context);
+    scaffold.showSnackBar(
+      SnackBar(
+        content: message ==
+                "[firebase_auth/invalid-email] The email address is badly formatted."
+            ? Text("Your Email Is Badly Formatted")
+            : message ==
+                    "[firebase_auth/weak-password] Password should be at least 6 characters"
+                ? Text("Password Can't Be Less Than 6 characters!")
+                : message ==
+                        "[firebase_auth/email-already-in-use] The email address is already in use by another account."
+                    ? Text("Email Allready Exists !")
+                    : message == "You Have To Choose A Pic"
+                        ? Text("You Have To Choose A Pic")
+                        : Text("some thing went wrong "),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
 
-    return BlocProvider(
-      create: (BuildContext context) => SignUpScreenCubit(),
-      child: BlocConsumer<SignUpScreenCubit, SignUpScreenStates>(
-        listener: (BuildContext context, state) {
-          if (state is SignUpScreenSuccessState) {
-            navigateAndFinish(route: LoginScreen() , context: context);
-
-          }
-          if (state is SignUpScreenErrorState) {
-            showToast(text: state.error, isError: true);
-          }
-        },
-        builder: (BuildContext context, state) {
-          List errors = SignUpScreenCubit.get(context).errors;
-          File image = SignUpScreenCubit.get(context).image;
-          SignUpScreenCubit.get(context).context = context;
-
-          return Scaffold(
-            appBar: AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0.0,
-              iconTheme: IconThemeData(color: Colors.black),
-            ),
-            body: ConditionalBuilder(
-              condition: state is! SignUpScreenLoadingState,
-              builder: (BuildContext context) => SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 15.0),
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.teal,
+        elevation: 0.0,
+        iconTheme: IconThemeData(color: Colors.black),
+      ),
+      body: Builder(
+        builder: (BuildContext context) => Padding(
+          padding: const EdgeInsets.only(top: 20),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Align(
                   child: Column(
                     children: [
                       Text(
-                        'Sign Up',
+                        "SignUp",
                         style: TextStyle(
-                          fontSize: getProportionateScreenWidth(26),
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w600,
+                            fontSize: 35, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Container(
+                        width: 320,
+                        child: Text(
+                          "Complete your details or continue with social media",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 20,
+                          ),
                         ),
                       ),
                       SizedBox(
-                        height: getProportionateScreenHeight(5.0),
+                        height: 10,
                       ),
-                      Text(
-                        'Complete your details or continue',
-                        style: TextStyle(
-                          fontSize: getProportionateScreenWidth(14),
-                        ),
-                      ),
-                      Text(
-                        'with social media',
-                        style: TextStyle(
-                          fontSize: getProportionateScreenWidth(14),
-                        ),
-                      ),
-
-                      SizedBox(
-                        height: SizeConfig.screenHeight * 0.02,
-                      ),
-                      InkWell(
-                        onTap: () {
-                          SignUpScreenCubit.get(context).pickImage();
-                        },
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: kPrimaryColor,
-                                  width: getProportionateScreenWidth(3.0),
-                                ),
-                              ),
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 69,
+                            backgroundColor: Colors.teal,
+                            child: CircleAvatar(
+                              backgroundImage: _image == null
+                                  ? AssetImage(
+                                      "assets/images/profile.png",
+                                    )
+                                  : FileImage(_image),
+                              radius: 65,
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            height: 60,
+                            left: 100,
+                            child: Container(
                               child: CircleAvatar(
-                                radius: getProportionateScreenWidth(50.0),
-                                backgroundImage: (image != null)
-                                    ? FileImage(image)
-                                    : AssetImage(
-                                        'assets/images/Profile Image.png',
-                                      ),
-                              ),
+                                  backgroundColor: Colors.teal,
+                                  child: IconButton(
+                                    onPressed: () {
+                                      _showAlert(context);
+                                    },
+                                    icon: Icon(
+                                      Icons.camera_alt,
+                                      size: 20,
+                                    ),
+                                    color: Colors.white,
+                                  )),
                             ),
-                            Container(
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 14.0,
-                              ),
-                              height: 30.0,
-                              width: 30.0,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: kPrimaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       SizedBox(
-                        height: SizeConfig.screenHeight * 0.02,
+                        height: 10,
                       ),
                       Form(
                         key: formKey,
                         child: Column(
                           children: [
-                            defaultFormField(
-                                validator: (String value) {
-                                  if (value.isEmpty &&
-                                      !errors.contains(kFNameNullError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .addFNameNullError();
-                                  }
-                                  return null;
-                                },
-                                onChanged: (String value) {
-                                  if (value.isNotEmpty &&
-                                      errors.contains(kFNameNullError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .removeFNameNullError();
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  left: 15, right: 15, top: 5, bottom: 10),
+                              child: TextFormField(
+                                validator: (value) {
+                                  if (value.isEmpty) {
+                                    return "pleas produce a value ";
                                   }
                                   return null;
                                 },
                                 controller: fNameController,
-                                radius: 24.0,
-                                labelText: 'Full Name',
-                                hintText: 'Enter your name'),
-                            SizedBox(
-                              height: getProportionateScreenHeight(25.0),
+                                onSaved: (value) {
+                                  fNameController.text = value;
+                                  print(fNameController.text);
+                                },
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: "Full Name",
+                                  hintText: "Enter your name",
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.grey, width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.teal, width: 2.5),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.red, width: 2.5),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.teal, width: 2.5),
+                                  ),
+                                ),
+                              ),
                             ),
-                            defaultFormField(
-                                validator: (String value) {
-                                  if (value.isEmpty &&
-                                      !errors.contains(kPhoneNullError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .addLNameNullError();
-                                  }
-                                  return null;
-                                },
-                                onChanged: (String value) {
-                                  if (value.isNotEmpty &&
-                                      errors.contains(kPhoneNullError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .removeLNameNullError();
-                                  }
-                                  return null;
-                                },
-                                type: TextInputType.phone,
+                            SizedBox(
+                              height: 10,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  left: 15, right: 15, bottom: 10),
+                              child: TextFormField(
                                 controller: phoneController,
-                                radius: 24.0,
-                                labelText: 'Phone',
-                                hintText: 'Enter your phone'),
-                            SizedBox(
-                              height: getProportionateScreenHeight(25.0),
+                                onSaved: (value) {
+                                  phoneController.text = value;
+                                },
+                                validator: (value) {
+                                  if (value.isEmpty) {
+                                    return "pleas produce a value ";
+                                  }
+                                  return null;
+                                },
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: "Phone",
+                                  hintText: "Enter your number",
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.grey, width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.teal, width: 2.5),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.red, width: 2.5),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.teal, width: 2.5),
+                                  ),
+                                ),
+                              ),
                             ),
-                            defaultFormField(
-                                validator: (String value) {
-                                  if (value.isEmpty &&
-                                      !errors.contains(kEmailNullError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .addEmailNullError();
-                                  } else if (!emailValidatorRegExp
-                                          .hasMatch(value) &&
-                                      !errors.contains(kInvalidEmailError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .addEmailNotValidError();
-                                  }
-                                  return null;
-                                },
-                                onChanged: (String value) {
-                                  if (value.isNotEmpty &&
-                                      errors.contains(kEmailNullError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .removeEmailNullError();
-                                  } else if (emailValidatorRegExp
-                                          .hasMatch(value) &&
-                                      errors.contains(kInvalidEmailError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .removeEmailNotValidError();
-                                  }
-                                  return null;
-                                },
-                                type: TextInputType.emailAddress,
+                            SizedBox(
+                              height: 10,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  left: 15, right: 15, bottom: 10),
+                              child: TextFormField(
                                 controller: emailController,
-                                radius: 24.0,
-                                labelText: 'Email',
-                                hintText: 'Enter your email'),
-                            SizedBox(
-                              height: getProportionateScreenHeight(25.0),
+                                onSaved: (value) {
+                                  emailController.text = value;
+                                },
+                                validator: (value) {
+                                  if (value.isEmpty) {
+                                    return "pleas produce a value ";
+                                  }
+                                  return null;
+                                },
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: "Email",
+                                  hintText: "Enter your Email",
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.grey, width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.teal, width: 2.5),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.red, width: 2.5),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.teal, width: 2.5),
+                                  ),
+                                ),
+                              ),
                             ),
-                            defaultFormField(
-                                validator: (String value) {
-                                  if (value.isEmpty &&
-                                      !errors.contains(kPassNullError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .addPassWordNullError();
-                                  } else if (value.length < 6 &&
-                                      !errors.contains(kShortPassError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .addPasswordShortError();
-                                  }
-                                  return null;
-                                },
-                                onChanged: (String value) {
-                                  if (value.isNotEmpty &&
-                                      errors.contains(kPassNullError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .removePassWordNullError();
-                                  } else if (value.length >= 6 &&
-                                      errors.contains(kShortPassError)) {
-                                    SignUpScreenCubit.get(context)
-                                        .removePasswordShortError();
-                                  }
-                                  return null;
-                                },
-                                type: TextInputType.visiblePassword,
+                            SizedBox(
+                              height: 10,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  left: 15, right: 15, bottom: 10),
+                              child: TextFormField(
                                 controller: passwordController,
-                                radius: 24.0,
-                                labelText: 'Password ',
-                                hintText: 'Enter your password',
-                                isPassword: true),
+                                onSaved: (value) {
+                                  passwordController.text = value;
+                                },
+                                validator: (value) {
+                                  if (value.isEmpty) {
+                                    return "pleas produce a value ";
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  labelText: "Password",
+                                  hintText: "Enter your password",
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.grey, width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.teal, width: 2.5),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.red, width: 2.5),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                    borderSide: BorderSide(
+                                        color: Colors.teal, width: 2.5),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 10,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  left: 20, right: 20, top: 10),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(40),
+                                ),
+                                width: double.infinity,
+                                child: RaisedButton(
+                                  onPressed: () {
+                                    onSumbit(context);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Text("SignUp"),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        new BorderRadius.circular(25.0),
+                                  ),
+                                  color: Colors.teal,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      SizedBox(
-                        height: getProportionateScreenHeight(25.0),
-                      ),
-
-                      Column(
-                        children: List.generate(
-                          errors.length,
-                          (index) => formErrorText(error: errors[index]),
-                        ),
-                      ),
-                      SizedBox(
-                        height: getProportionateScreenHeight(10.0),
-                      ),
-                      defaultButton(
-                          text: 'SignUp',
-                          padding: 0.0,
-                          function: () {
-                            if (formKey.currentState.validate() && SignUpScreenCubit.get(context).errors.isEmpty) {
-                              formKey.currentState.save();
-                              print('validate');
-                              SignUpScreenCubit.get(context).uploadImage(
-                                  email: emailController.text,
-                                  password: passwordController.text,
-                                  fullName: fNameController.text,
-                                  phone: phoneController.text,);
-                            }
-                          },
-                          radius: 24.0),
-                      SizedBox(
-                        height: SizeConfig.screenHeight * 0.02,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          socialItem(
-                              icon: 'assets/icons/google-icon.svg',
-                              function: () {}),
-                          SizedBox(
-                            width: getProportionateScreenWidth(15.0),
-                          ),
-                          socialItem(
-                            icon: 'assets/icons/facebook-2.svg',
-                            function: () {},
-                          ),
-                          SizedBox(
-                            width: getProportionateScreenWidth(15.0),
-                          ),
-                          socialItem(
-                            icon: 'assets/icons/twitter.svg',
-                            function: () {},
-                          ),
-                        ],
-                      ),
                     ],
                   ),
-                ),
-              ),
-              fallback: (ctx) => Stack(
-                alignment: Alignment.center,
-                children: [
-                  SingleChildScrollView(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 15.0),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Sign Up',
-                            style: TextStyle(
-                              fontSize: getProportionateScreenWidth(26),
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(
-                            height: getProportionateScreenHeight(5.0),
-                          ),
-                          Text(
-                            'Complete your details or continue',
-                            style: TextStyle(
-                              fontSize: getProportionateScreenWidth(14),
-                            ),
-                          ),
-                          Text(
-                            'with social media',
-                            style: TextStyle(
-                              fontSize: getProportionateScreenWidth(14),
-                            ),
-                          ),
-                          // SizedBox(
-                          //   height: getProportionateScreenHeight(100.0),
-                          // ),
-                          SizedBox(
-                            height: SizeConfig.screenHeight * 0.02,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              SignUpScreenCubit.get(context).pickImage();
-                            },
-                            child: Stack(
-                              alignment: Alignment.bottomRight,
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: kPrimaryColor,
-                                      width: getProportionateScreenWidth(3.0),
-                                    ),
-                                  ),
-                                  child: CircleAvatar(
-                                    radius: getProportionateScreenWidth(50.0),
-                                    backgroundImage: (image != null)
-                                        ? FileImage(image)
-                                        : AssetImage(
-                                      'assets/images/Profile Image.png',
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  child: Icon(
-                                    Icons.camera_alt,
-                                    color: Colors.white,
-                                    size: 14.0,
-                                  ),
-                                  height: 30.0,
-                                  width: 30.0,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: kPrimaryColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: SizeConfig.screenHeight * 0.02,
-                          ),
-                          Form(
-                            key: formKey,
-                            child: Column(
-                              children: [
-                                defaultFormField(
-                                    validator: (String value) {
-                                      if (value.isEmpty &&
-                                          !errors.contains(kFNameNullError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .addFNameNullError();
-                                      }
-                                      return null;
-                                    },
-                                    onChanged: (String value) {
-                                      if (value.isNotEmpty &&
-                                          errors.contains(kFNameNullError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .removeFNameNullError();
-                                      }
-                                      return null;
-                                    },
-                                    controller: fNameController,
-                                    radius: 24.0,
-                                    labelText: 'Full Name',
-                                    hintText: 'Enter your name'),
-                                SizedBox(
-                                  height: getProportionateScreenHeight(25.0),
-                                ),
-                                defaultFormField(
-                                    validator: (String value) {
-                                      if (value.isEmpty &&
-                                          !errors.contains(kPhoneNullError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .addLNameNullError();
-                                      }
-                                      return null;
-                                    },
-                                    onChanged: (String value) {
-                                      if (value.isNotEmpty &&
-                                          errors.contains(kPhoneNullError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .removeLNameNullError();
-                                      }
-                                      return null;
-                                    },
-                                    type: TextInputType.phone,
-                                    controller: phoneController,
-                                    radius: 24.0,
-                                    labelText: 'Phone',
-                                    hintText: 'Enter your phone'),
-                                SizedBox(
-                                  height: getProportionateScreenHeight(25.0),
-                                ),
-                                defaultFormField(
-                                    validator: (String value) {
-                                      if (value.isEmpty &&
-                                          !errors.contains(kEmailNullError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .addEmailNullError();
-                                      } else if (!emailValidatorRegExp
-                                          .hasMatch(value) &&
-                                          !errors.contains(kInvalidEmailError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .addEmailNotValidError();
-                                      }
-                                      return null;
-                                    },
-                                    onChanged: (String value) {
-                                      if (value.isNotEmpty &&
-                                          errors.contains(kEmailNullError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .removeEmailNullError();
-                                      } else if (emailValidatorRegExp
-                                          .hasMatch(value) &&
-                                          errors.contains(kInvalidEmailError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .removeEmailNotValidError();
-                                      }
-                                      return null;
-                                    },
-                                    type: TextInputType.emailAddress,
-                                    controller: emailController,
-                                    radius: 24.0,
-                                    labelText: 'Email',
-                                    hintText: 'Enter your email'),
-                                SizedBox(
-                                  height: getProportionateScreenHeight(25.0),
-                                ),
-                                defaultFormField(
-                                    validator: (String value) {
-                                      if (value.isEmpty &&
-                                          !errors.contains(kPassNullError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .addPassWordNullError();
-                                      } else if (value.length < 6 &&
-                                          !errors.contains(kShortPassError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .addPasswordShortError();
-                                      }
-                                      return null;
-                                    },
-                                    onChanged: (String value) {
-                                      if (value.isNotEmpty &&
-                                          errors.contains(kPassNullError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .removePassWordNullError();
-                                      } else if (value.length >= 6 &&
-                                          errors.contains(kShortPassError)) {
-                                        SignUpScreenCubit.get(context)
-                                            .removePasswordShortError();
-                                      }
-                                      return null;
-                                    },
-                                    type: TextInputType.visiblePassword,
-                                    controller: passwordController,
-                                    radius: 24.0,
-                                    labelText: 'Password ',
-                                    hintText: 'Enter your password',
-                                    isPassword: true),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: getProportionateScreenHeight(25.0),
-                          ),
-
-                          Column(
-                            children: List.generate(
-                              errors.length,
-                                  (index) => formErrorText(error: errors[index]),
-                            ),
-                          ),
-                          SizedBox(
-                            height: getProportionateScreenHeight(10.0),
-                          ),
-                          defaultButton(
-                              text: 'SignUp',
-                              padding: 0.0,
-                              function: () {
-                                if (formKey.currentState.validate()) {
-                                  formKey.currentState.save();
-                                }
-                              },
-                              radius: 24.0),
-                          SizedBox(
-                            height: SizeConfig.screenHeight * 0.02,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              socialItem(
-                                  icon: 'assets/icons/google-icon.svg',
-                                  function: () {}),
-                              SizedBox(
-                                width: getProportionateScreenWidth(15.0),
-                              ),
-                              socialItem(
-                                icon: 'assets/icons/facebook-2.svg',
-                                function: () {},
-                              ),
-                              SizedBox(
-                                width: getProportionateScreenWidth(15.0),
-                              ),
-                              socialItem(
-                                icon: 'assets/icons/twitter.svg',
-                                function: () {},
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  CircularProgressIndicator(),
-                ],
-              ),
+                  alignment: Alignment.center,
+                )
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
